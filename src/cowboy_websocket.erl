@@ -503,6 +503,8 @@ handler_call(State=#state{handler=Handler}, HandlerState,
 					NextState(State, HandlerState2, ParseState);
 				close ->
 					websocket_close(State, HandlerState2, {error, close});
+                {close, Reason} ->
+                   websocket_close(State, HandlerState2, Reason);
 				Error = {error, _} ->
 					websocket_close(State, HandlerState2, Error)
 			end;
@@ -513,6 +515,8 @@ handler_call(State=#state{handler=Handler}, HandlerState,
 						HandlerState2, ParseState);
 				close ->
                     websocket_close(State, HandlerState2, {error, close});
+                {close, Reason} ->
+                    websocket_close(State, HandlerState2, Reason);
 				Error = {error, _} ->
 					websocket_close(State, HandlerState2, Error)
 			end;
@@ -530,8 +534,8 @@ handler_call_result(State0, HandlerState, ParseState, NextState, Commands) ->
 	case commands(Commands, State0, []) of
 		{ok, State} ->
 			NextState(State, HandlerState, ParseState);
-		{close, State} ->
-            websocket_close(State, HandlerState, {error, close});
+		{{close, Reason}, State} ->
+            websocket_close(State, HandlerState, Reason);
 		{stop, State} ->
             websocket_close(State, HandlerState, stop);
 		{Error = {error, _}, State} ->
@@ -563,7 +567,7 @@ commands([Frame|Tail], State, Data0) ->
 	case is_close_frame(Frame) of
 		true ->
 			_ = transport_send(State, fin, lists:reverse(Data)),
-			{close, State};
+			{Frame, State};
 		false ->
 			commands(Tail, State, Data)
 	end.
@@ -582,7 +586,7 @@ websocket_send(Frame, State) ->
 	case is_close_frame(Frame) of
 		true ->
 			_ = transport_send(State, fin, Data),
-			close;
+			Frame;
 		false ->
 			transport_send(State, nofin, Data)
 	end.
@@ -594,7 +598,7 @@ websocket_send_many([Frame|Tail], State, Acc0) ->
 	case is_close_frame(Frame) of
 		true ->
 			_ = transport_send(State, fin, lists:reverse(Acc)),
-			close;
+			Frame;
 		false ->
 			websocket_send_many(Tail, State, Acc)
 	end.
@@ -634,7 +638,7 @@ websocket_send_close(_State, {error, {sock_error, _Reason}}) ->
     ok;
 websocket_send_close(State, Reason) ->
 	_ = case Reason of
-		Normal when Normal =:= stop; Normal =:= timeout ->
+		Normal when Normal =:= stop; Normal =:= timeout; Normal =:= normal ->
 			transport_send(State, fin, frame({close, 1000, <<>>}, State));
         close ->
 			transport_send(State, fin, frame({close, 1000, <<>>}, State));
@@ -656,6 +660,8 @@ websocket_send_close(State, Reason) ->
 	ok.
 
 %% Don't compress frames while deflate is disabled.
+frame({close, _Reason}, State) ->
+	cow_ws:frame(close, State);
 frame(Frame, #state{deflate=false, extensions=Extensions}) ->
 	cow_ws:frame(Frame, Extensions#{deflate => false});
 frame(Frame, #state{extensions=Extensions}) ->
