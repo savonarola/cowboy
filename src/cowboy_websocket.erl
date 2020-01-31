@@ -638,9 +638,7 @@ websocket_send_close(_State, {error, {sock_error, _Reason}}) ->
     ok;
 websocket_send_close(State, Reason) ->
 	_ = case Reason of
-		Normal when Normal =:= stop; Normal =:= timeout; Normal =:= normal ->
-			transport_send(State, fin, frame({close, 1000, <<>>}, State));
-        close ->
+		Normal when is_atom(Normal) ->
 			transport_send(State, fin, frame({close, 1000, <<>>}, State));
         {error, close} ->
 			transport_send(State, fin, frame({close, 1000, <<>>}, State));
