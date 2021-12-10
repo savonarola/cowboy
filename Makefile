@@ -21,8 +21,12 @@ xref:
 eunit: compile
 	$(REBAR) eunit verbose=truen
 
+.PHONY: clean-example-deps
+clean-example-deps:
+	@rm -rf examples/*/deps examples/*/_rel examples/*/erlang.mk
+
 .PHONY: ct
-ct: compile
+ct: compile clean-example-deps
 	$(REBAR) as test ct -v
 
 cover:

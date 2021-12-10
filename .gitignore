@@ -9,8 +9,9 @@ doc/man3
 doc/man7
 ebin/*.beam
 ebin/test
-examples/*/ebin
 examples/*/*.d
+examples/*/ebin
+examples/*/erlang.mk
 logs
 relx
 test/*.beam

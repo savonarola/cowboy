@@ -62,7 +62,7 @@ do_find_make_cmd() ->
 do_get_paths(Example0) ->
 	Example = atom_to_list(Example0),
 	{ok, CWD} = file:get_cwd(),
-	Dir = CWD ++ "/../../examples/" ++ Example,
+	Dir = CWD ++ "/../../../../examples/" ++ Example,
 	Rel = Dir ++ "/_rel/" ++ Example ++ "_example/bin/" ++ Example ++ "_example",
 	Log = Dir ++ "/_rel/" ++ Example ++ "_example/log/erlang.log.1",
 	{Dir, Rel, Log}.
@@ -458,14 +458,14 @@ websocket(Config) ->
 			exit(timeout)
 		end,
 		%% Check that we receive the echoed message.
-		gun:ws_send(Pid, {text, <<"hello">>}),
+		gun:ws_send(Pid, StreamRef, {text, <<"hello">>}),
 		receive
 			{gun_ws, Pid, StreamRef, {text, <<"That's what she said! hello">>}} ->
 				ok
 		after 500 ->
 			exit(timeout)
 		end,
-		gun:ws_send(Pid, close)
+		gun:ws_send(Pid, StreamRef, close)
 	after
 		do_stop(websocket)
 	end.

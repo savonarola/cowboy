@@ -534,8 +534,12 @@ handler_call_result(State0, HandlerState, ParseState, NextState, Commands) ->
 	case commands(Commands, State0, []) of
 		{ok, State} ->
 			NextState(State, HandlerState, ParseState);
+		{{close, _, _}, State} ->
+            websocket_close(State, HandlerState, close);
 		{{close, Reason}, State} ->
             websocket_close(State, HandlerState, Reason);
+		{close, State} ->
+            websocket_close(State, HandlerState, close);
 		{stop, State} ->
             websocket_close(State, HandlerState, stop);
 		{Error = {error, _}, State} ->
